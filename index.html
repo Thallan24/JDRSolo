@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saga — Jeu de Rôle Narratif</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg-dark:    #0d0a07;
+  --bg-mid:     #1a1208;
+  --bg-card:    #221a0e;
+  --bg-panel:   #2a1f10;
+  --border:     #5a3d1a;
+  --border-glow:#c8860a;
+  --gold:       #d4a017;
+  --gold-light: #f0c040;
+  --amber:      #e8871a;
+  --orange:     #f56a00;
+  --cream:      #f5e8cc;
+  --muted:      #9a8060;
+  --shadow:     rgba(0,0,0,0.8);
+
+  /* Oracle colours (matching the rainbow scale) */
+  --c-red:    #e63030;
+  --c-orange: #f5820a;
+  --c-yellow: #e8c800;
+  --c-lime:   #5ad000;
+  --c-green:  #10b870;
+  --c-teal:   #10bfc0;
+  --c-blue:   #1888e8;
+  --c-purple: #8850e8;
+
+  /* Competence colours */
+  --social:   #f5820a;
+  --physique: #e63030;
+  --emo:      #8850e8;
+  --magie:    #10bfc0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-dark);
+  color: var(--cream);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(200,134,10,0.08) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+#app { max-width: 960px; margin: 0 auto; padding: 0 16px 60px; }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  text-align: center;
+  padding: 48px 24px 32px;
+  position: relative;
+}
+header::after {
+  content: '';
+  display: block;
+  margin: 24px auto 0;
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-glow), transparent);
+}
+.title-saga {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(212,160,23,0.5), 0 2px 4px var(--shadow);
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+.title-sub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  color: var(--muted);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+.header-ornament {
+  font-size: 1.4rem;
+  color: var(--border-glow);
+  margin: 8px 0;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   NAV TABS
+   ============================================================ */
+nav.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 24px 0 0;
+  border-bottom: 1px solid var(--border);
+}
+nav.tabs button {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 10px 18px;
+  cursor: pointer;
+  position: relative;
+  transition: color .2s;
+}
+nav.tabs button:hover { color: var(--gold-light); }
+nav.tabs button.active {
+  color: var(--gold);
+}
+nav.tabs button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 1px;
+}
+
+/* ============================================================
+   SECTIONS (tabs)
+   ============================================================ */
+.section { display: none; padding: 32px 0; animation: fadeIn .3s ease; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+/* ============================================================
+   CARDS & PANELS
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(212,160,23,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 1.1em; }
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+input[type=text], textarea, select {
+  width: 100%;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--cream);
+  font-family: 'EB Garamond', serif;
+  font-size: 1rem;
+  padding: 8px 12px;
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+}
+input[type=text]:focus, textarea:focus {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 2px rgba(200,134,10,0.15);
+}
+textarea { resize: vertical; min-height: 80px; }
+.field { margin-bottom: 16px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .field-row { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   COMPETENCE STEPPER
+   ============================================================ */
+.competences-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media(max-width:600px){ .competences-grid { grid-template-columns: 1fr 1fr; } }
+
+.comp-item {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  transition: border-color .2s;
+}
+.comp-item:hover { border-color: var(--border-glow); }
+.comp-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.comp-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.comp-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.comp-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--gold);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.comp-btn:hover { background: var(--border-glow); border-color: var(--gold); color: var(--bg-dark); }
+.comp-val {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.4rem;
+  color: var(--gold-light);
+  min-width: 24px;
+}
+.points-left {
+  text-align: center;
+  margin-top: 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+}
+
+/* ============================================================
+   FRAPPES (combat)
+   ============================================================ */
+.frappes-track {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.frappe-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.frappe-dot.empty { background: var(--bg-mid); }
+.frappe-dot.hit {
+  border-color: var(--c-red);
+  background: rgba(230,48,48,0.2);
+  color: var(--c-red);
+}
+.frappe-dot.ko {
+  border-color: #fff;
+  background: rgba(230,48,48,0.5);
+  color: #fff;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(230,48,48,0.4)} 50%{box-shadow:0 0 0 8px rgba(230,48,48,0)} }
+
+/* ============================================================
+   JETONS MAGIE
+   ============================================================ */
+.jetons-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.jeton {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--magie);
+  background: rgba(16,191,192,0.15);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  color: var(--magie);
+}
+.jeton.used {
+  background: var(--bg-mid);
+  border-color: var(--border);
+  color: var(--border);
+}
+.jeton:hover { transform: scale(1.1); }
+.jeton-tip { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #5a3d1a, #3a2508);
+  border: 1px solid var(--border-glow);
+  color: var(--gold);
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn:hover { background: linear-gradient(135deg, #7a5522, #5a3d1a); box-shadow: 0 0 16px rgba(200,134,10,0.3); }
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold), #a87010);
+  color: var(--bg-dark);
+  border-color: var(--gold-light);
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--gold-light), var(--gold)); }
+.btn-danger {
+  border-color: var(--c-red);
+  color: var(--c-red);
+}
+.btn-sm { padding: 6px 14px; font-size: 0.7rem; }
+
+/* ============================================================
+   DÉ ROLL DISPLAY
+   ============================================================ */
+.dice-area {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.dice-big {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  line-height: 1;
+  display: inline-block;
+  transition: all .2s;
+}
+.dice-big.rolling { animation: rollAnim 0.4s ease; }
+@keyframes rollAnim {
+  0%  { transform: rotate(-20deg) scale(0.8); opacity:0.3; }
+  50% { transform: rotate(15deg)  scale(1.15); }
+  100%{ transform: none;                       opacity:1; }
+}
+.dice-result-text {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  margin-top: 8px;
+}
+.result-success { color: #5ad000; }
+.result-fail    { color: var(--c-red); }
+.result-neutral { color: var(--muted); }
+
+/* ============================================================
+   ORACLE
+   ============================================================ */
+.oracle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+.oracle-table th {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.oracle-table td {
+  padding: 5px 8px;
+  text-align: center;
+  font-size: 0.82rem;
+  border-bottom: 1px solid rgba(90,61,26,0.3);
+}
+.oracle-table tr.highlighted td { background: rgba(212,160,23,0.12); }
+.oracle-table td.row-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+/* Oracle probability scale bars */
+.prob-bar {
+  height: 10px;
+  border-radius: 4px;
+  margin: 2px 0;
+  position: relative;
+  overflow: hidden;
+}
+.prob-label { font-size: 0.72rem; font-style: italic; }
+
+/* Colored result spans */
+.r-non-ep  { color: var(--c-red);    font-weight:600; }
+.r-non     { color: #f5820a;         font-weight:600; }
+.r-non-m   { color: var(--c-yellow); font-weight:600; }
+.r-oui-m   { color: var(--c-lime);   font-weight:600; }
+.r-oui     { color: var(--c-green);  font-weight:600; }
+.r-oui-ep  { color: #30d0ff;         font-weight:600; }
+
+/* Highlighted result cells */
+.oracle-result-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   ORACLE SCALE VISUAL (like the image)
+   ============================================================ */
+.oracle-scale-wrapper { overflow-x: auto; }
+.oracle-scale {
+  min-width: 560px;
+  margin-bottom: 20px;
+}
+.oracle-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.oracle-row-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  text-align: right;
+  color: var(--cream);
+  letter-spacing: 0.05em;
+}
+.oracle-bar-track {
+  position: relative;
+  height: 22px;
+  border-radius: 4px;
+  overflow: visible;
+  background: linear-gradient(to right,
+    #e63030 0%, #f5820a 18%, #e8c800 35%,
+    #5ad000 52%, #10b870 65%, #10bfc0 80%, #1888e8 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.oracle-tick-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.oracle-tick {
+  flex: 1;
+  border-right: 1px solid rgba(0,0,0,0.25);
+  position: relative;
+}
+.oracle-tick:last-child { border-right: none; }
+.oracle-tick-num {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  color: var(--muted);
+}
+.oracle-range-label {
+  position: absolute;
+  top: -18px;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+  font-style: italic;
+}
+.oracle-pointer {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: calc(100% + 8px);
+  background: white;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255,255,255,0.8);
+  transform: translateX(-50%);
+  transition: left .4s cubic-bezier(.34,1.56,.64,1);
+  z-index: 2;
+}
+
+/* ============================================================
+   MOTS-CLÉS
+   ============================================================ */
+.motscles-result {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.motscle-pill {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: var(--gold-light);
+  background: rgba(212,160,23,0.1);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 6px 20px;
+  letter-spacing: 0.08em;
+}
+.motscle-plus {
+  font-size: 1.4rem;
+  color: var(--muted);
+}
+
+/* ============================================================
+   JOURNAL
+   ============================================================ */
+.journal-entry {
+  background: var(--bg-mid);
+  border-left: 3px solid var(--border-glow);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.journal-entry .entry-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.journal-entry .entry-text {
+  font-style: italic;
+  line-height: 1.7;
+}
+.journal-entry .entry-del {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none; border: none;
+  color: rgba(230,48,48,0.4);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color .2s;
+}
+.journal-entry .entry-del:hover { color: var(--c-red); }
+.journal-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.journal-add-row textarea { flex: 1; }
+
+/* ============================================================
+   PNJ LIST
+   ============================================================ */
+.pnj-card {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.pnj-card .pnj-info { flex: 1; }
+.pnj-card .pnj-name {
+  font-family: 'Cinzel', serif;
+  color: var(--gold);
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+}
+.pnj-card .pnj-desc { font-size: 0.85rem; color: var(--muted); }
+.pnj-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.pnj-stat {
+  font-size: 0.72rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(90,61,26,0.3);
+  border: 1px solid var(--border);
+  color: var(--cream);
+}
+
+/* ============================================================
+   SAVE/LOAD
+   ============================================================ */
+.save-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+.save-status {
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  flex: 1;
+}
+.save-status.saved { color: #5ad000; }
+.save-status.unsaved { color: var(--amber); }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  padding: 10px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .3s, transform .3s;
+  pointer-events: none;
+  z-index: 999;
+}
+#toast.show { opacity: 1; transform: none; }
+
+/* ============================================================
+   DICE ROLLER PANEL (jet de compétence)
+   ============================================================ */
+.jet-config {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media(max-width:500px){ .jet-config { grid-template-columns: 1fr 1fr; } }
+.select-btn {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  color: var(--cream);
+  font-family: 'EB Garamond', serif;
+  font-size: 0.9rem;
+}
+.select-btn:hover { border-color: var(--border-glow); }
+.select-btn.chosen { border-color: var(--gold); background: rgba(212,160,23,0.1); color: var(--gold); }
+
+/* ============================================================
+   SEPARATOR
+   ============================================================ */
+hr.rune { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-glow); }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-ornament">✦ ✦ ✦</div>
+    <div class="title-saga">Saga</div>
+    <div class="title-sub">Jeu de Rôle Narratif · Imagine Ton Aventure</div>
+    <div class="header-ornament" style="margin-top:8px">✦ ✦ ✦</div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="tabs" id="main-nav">
+    <button class="active" data-tab="perso">✦ Personnage</button>
+    <button data-tab="jet">⚀ Jet de Compétence</button>
+    <button data-tab="oracle">🔮 Oracle</button>
+    <button data-tab="combat">⚔ Combat</button>
+    <button data-tab="journal">📜 Journal</button>
+    <button data-tab="pnj">👥 PNJ</button>
+  </nav>
+
+  <!-- ===================== TAB : PERSONNAGE ===================== -->
+  <section class="section active" id="tab-perso">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📖</span> Identité</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Nom du personnage</label>
+          <input type="text" id="p-nom" placeholder="Ex : Avelyne Valmor…">
+        </div>
+        <div class="field">
+          <label>Allure / Apparence</label>
+          <input type="text" id="p-allure" placeholder="Ex : Manteau sombre, regard décidé…">
+        </div>
+      </div>
+      <div class="field">
+        <label>Passé & Histoire</label>
+        <textarea id="p-passe" rows="4" placeholder="A-t-il eu une enfance facile ? Quel serment a-t-il fait ? Quel secret lie son nom à une famille…"></textarea>
+      </div>
+      <div class="field">
+        <label>Situation actuelle (scène de départ)</label>
+        <textarea id="p-situation" rows="2" placeholder="Ex : Dans les archives de la cité, elle lit un dossier sur son père disparu…"></textarea>
+      </div>
+      <div class="field">
+        <label>Objectif / Motivation principale</label>
+        <input type="text" id="p-objectif" placeholder="Ce que ton personnage cherche à accomplir…">
+      </div>
+    </div>
+
+    <!-- COMPÉTENCES -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> Compétences <span style="color:var(--muted);font-size:0.8rem;margin-left:auto;font-family:'EB Garamond',serif;text-transform:none;letter-spacing:0">4 points à répartir</span></div>
+      <div class="competences-grid" id="comp-grid">
+        <!-- injected by JS -->
+      </div>
+      <p class="points-left" id="points-left-msg">Points restants : <strong id="pts-left">4</strong></p>
+    </div>
+
+    <!-- MAGIE -->
+    <div class="card" id="magie-card">
+      <div class="card-title"><span class="icon">✨</span> Magie</div>
+      <div class="field">
+        <label>Type de Magie I (thème)</label>
+        <input type="text" id="p-magie1" placeholder="Ex : Télépathie, Ombres, Feu, Plantes, Voix intérieure…">
+      </div>
+      <div class="field">
+        <label>Description des effets / pouvoirs</label>
+        <textarea id="p-magie1-desc" rows="2" placeholder="Elle peut entrer dans les pensées des esprits faibles…"></textarea>
+      </div>
+      <div id="magie2-block" style="display:none">
+        <hr class="rune">
+        <div class="field">
+          <label>Type de Magie II (débloqué à Magie 4)</label>
+          <input type="text" id="p-magie2" placeholder="Thème du second type…">
+        </div>
+      </div>
+      <div id="magie3-block" style="display:none">
+        <div class="field" style="margin-top:12px">
+          <label>Type de Magie III (débloqué à Magie 7)</label>
+          <input type="text" id="p-magie3" placeholder="Thème du troisième type…">
+        </div>
+      </div>
+      <!-- Jetons magie -->
+      <hr class="rune">
+      <label>Jetons de magie (= score Magie · cliquer pour retourner)</label>
+      <div class="jetons-row" id="jetons-row">
+        <!-- injected by JS -->
+      </div>
+      <p class="jeton-tip" style="margin-top:6px">Retourner un jeton pour utiliser un effet magique. Tout se récupère après une nuit de sommeil.</p>
+      <button class="btn btn-sm" style="margin-top:10px" onclick="restoreJetons()">🌙 Nuit de sommeil — Récupérer les jetons</button>
+    </div>
+
+    <!-- NOTES -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span> Notes diverses</div>
+      <textarea id="p-notes" rows="4" placeholder="Inventaire, alliés, lieux importants, fils narratifs…"></textarea>
+    </div>
+
+    <!-- SAVE -->
+    <div class="card" style="padding:16px">
+      <div class="save-bar">
+        <button class="btn btn-primary" onclick="saveAll()">💾 Sauvegarder</button>
+        <button class="btn" onclick="exportJSON()">⬇ Exporter JSON</button>
+        <label class="btn" style="cursor:pointer;margin:0">⬆ Importer JSON
+          <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+        </label>
+        <button class="btn btn-danger btn-sm" onclick="confirmReset()">🗑 Réinitialiser</button>
+        <span class="save-status" id="save-status">Aucune sauvegarde</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB : JET ===================== -->
+  <section class="section" id="tab-jet">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🎲</span> Jet de Compétence</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px">Lance un d20 + ta compétence et compare au seuil de difficulté.</p>
+
+      <label style="margin-bottom:8px">Compétence utilisée</label>
+      <div class="jet-config" id="jet-comp-btns">
+        <!-- injected by JS -->
+      </div>
+
+      <label style="margin-top:4px;margin-bottom:8px">Difficulté</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="jet-diff-btns">
+        <button class="select-btn chosen" data-diff="10" onclick="setDiff(this,10)">Facile <strong>10</strong></button>
+        <button class="select-btn" data-diff="13" onclick="setDiff(this,13)">Moyen <strong>13</strong></button>
+        <button class="select-btn" data-diff="16" onclick="setDiff(this,16)">Difficile <strong>16</strong></button>
+        <button class="select-btn" data-diff="20" onclick="setDiff(this,20)">Épique <strong>20</strong></button>
+      </div>
+
+      <label style="margin-bottom:8px">Avantage / Désavantage</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="jet-avd-btns">
+        <button class="select-btn" data-avd="-1" onclick="setAvd(this,-1)">Désavantage</button>
+        <button class="select-btn chosen" data-avd="0" onclick="setAvd(this,0)">Normal</button>
+        <button class="select-btn" data-avd="1" onclick="setAvd(this,1)">Avantage</button>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;font-size:0.9rem;padding:14px" onclick="rollJet()">⚀ Lancer le dé</button>
+    </div>
+
+    <div class="dice-area" id="jet-result-area" style="display:none">
+      <div class="dice-big" id="jet-dice">—</div>
+      <div id="jet-detail" class="dice-result-text result-neutral"></div>
+      <div id="jet-verdict" style="margin-top:10px;font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.1em"></div>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB : ORACLE ===================== -->
+  <section class="section" id="tab-oracle">
+
+    <!-- Oracle visuel -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🔮</span> Oracle — Questions Fermées (Oui / Non)</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:20px">
+        Choisis la ligne de probabilité qui correspond à ta situation, pose ta question, puis lance le dé.
+      </p>
+
+      <label style="margin-bottom:8px">Probabilité</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="oracle-prob-btns">
+        <button class="select-btn chosen" data-prob="0" onclick="setProb(this,0)">Très plausible</button>
+        <button class="select-btn" data-prob="1" onclick="setProb(this,1)">Plausible</button>
+        <button class="select-btn" data-prob="2" onclick="setProb(this,2)">Neutre</button>
+        <button class="select-btn" data-prob="3" onclick="setProb(this,3)">Peu plausible</button>
+        <button class="select-btn" data-prob="4" onclick="setProb(this,4)">Très peu plausible</button>
+      </div>
+
+      <!-- Scale visuelle -->
+      <div class="oracle-scale-wrapper">
+        <div class="oracle-scale" id="oracle-scale-visual">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;font-size:0.9rem;padding:14px;margin-top:8px" onclick="rollOracle()">🎲 Consulter l'Oracle</button>
+
+      <div class="dice-area" id="oracle-result-area" style="display:none;margin-top:16px">
+        <div class="dice-big" id="oracle-dice">—</div>
+        <div id="oracle-detail" class="dice-result-text result-neutral"></div>
+        <div id="oracle-verdict" style="margin-top:8px;font-family:'Cinzel',serif;font-size:1.2rem;letter-spacing:0.1em"></div>
+      </div>
+    </div>
+
+    <!-- Mots-clés -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💬</span> Mots-Clés — Questions Ouvertes</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px">
+        Lance deux d10 (dizaines + unités) pour obtenir deux mots-clés inspirants. Laisse-toi guider par leur association pour répondre à ta question ouverte.
+      </p>
+      <button class="btn btn-primary" style="width:100%;font-size:0.9rem;padding:14px" onclick="rollMotsCles()">🎲 Tirer deux mots-clés</button>
+      <div class="motscles-result" id="mc-result" style="display:none">
+        <div class="motscle-pill" id="mc-word1"></div>
+        <div class="motscle-plus">+</div>
+        <div class="motscle-pill" id="mc-word2"></div>
+      </div>
+      <div id="mc-inspire" style="margin-top:12px;font-style:italic;color:var(--muted);font-size:0.9rem"></div>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB : COMBAT ===================== -->
+  <section class="section" id="tab-combat">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">⚔</span> Suivi de Combat</div>
+
+      <!-- Frappes perso -->
+      <label style="margin-bottom:10px">Frappes reçues (3 = KO)</label>
+      <div class="frappes-track" id="frappes-perso">
+        <!-- injected by JS -->
+      </div>
+      <div id="combat-status" style="margin-top:10px;font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.08em;color:var(--muted)"></div>
+      <button class="btn btn-sm" style="margin-top:10px" onclick="resetFrappes('perso')">↺ Réinitialiser</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">💥</span> Attaque</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px">d20 + Physique (ou Magie) vs 10 + Physique (ou Magie) ennemi</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="field">
+          <label>Type d'attaque</label>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="select-btn chosen" id="atk-phys" onclick="setAtkType('physique')">⚔ Physique</button>
+            <button class="select-btn" id="atk-magi" onclick="setAtkType('magie')">✨ Magique</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Physique/Magie de l'ennemi</label>
+          <input type="number" id="enemi-stat" value="2" min="0" max="10" style="width:80px;background:var(--bg-mid);border:1px solid var(--border);border-radius:4px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;padding:6px 10px;text-align:center">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="atk-avd-btns">
+        <button class="select-btn" data-avd="-1" onclick="setAtkAvd(this,-1)">Désavantage</button>
+        <button class="select-btn chosen" data-avd="0" onclick="setAtkAvd(this,0)">Normal</button>
+        <button class="select-btn" data-avd="1" onclick="setAtkAvd(this,1)">Avantage</button>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;font-size:0.9rem;padding:14px" onclick="rollAttaque()">⚔ Attaquer !</button>
+
+      <div class="dice-area" id="atk-result-area" style="display:none;margin-top:16px">
+        <div class="dice-big" id="atk-dice">—</div>
+        <div id="atk-detail" class="dice-result-text result-neutral"></div>
+        <div id="atk-verdict" style="margin-top:10px;font-family:'Cinzel',serif;font-size:1rem;letter-spacing:0.1em"></div>
+      </div>
+    </div>
+
+    <!-- PNJ frappes rapides -->
+    <div class="card">
+      <div class="card-title"><span class="icon">👹</span> Frappes Ennemi</div>
+      <div class="frappes-track" id="frappes-enemi">
+        <!-- injected by JS -->
+      </div>
+      <div id="enemi-status" style="margin-top:10px;font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.08em;color:var(--muted)"></div>
+      <button class="btn btn-sm" style="margin-top:10px" onclick="resetFrappes('enemi')">↺ Réinitialiser</button>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB : JOURNAL ===================== -->
+  <section class="section" id="tab-journal">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📜</span> Journal de Campagne</div>
+      <div class="journal-add-row">
+        <textarea id="journal-input" rows="3" placeholder="Écris ici ta prochaine entrée de journal… une scène, une révélation, une rencontre."></textarea>
+        <button class="btn btn-primary" style="white-space:nowrap;align-self:flex-end" onclick="addJournalEntry()">+ Ajouter</button>
+      </div>
+    </div>
+
+    <div id="journal-list">
+      <!-- injected by JS -->
+    </div>
+
+    <div id="journal-empty" style="text-align:center;color:var(--muted);font-style:italic;padding:40px;display:none">
+      Ton journal est vide. Commence à écrire ton aventure…
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB : PNJ ===================== -->
+  <section class="section" id="tab-pnj">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">👥</span> Créer un PNJ</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Nom / Rôle</label>
+          <input type="text" id="pnj-nom" placeholder="Ex : Capitaine de garde, Rick de Nirva…">
+        </div>
+        <div class="field">
+          <label>Catégorie</label>
+          <select id="pnj-cat" style="background:var(--bg-mid);border:1px solid var(--border);color:var(--cream);font-family:'EB Garamond',serif;font-size:1rem;padding:8px 12px;border-radius:4px;width:100%">
+            <option value="2">Figurant (2 pts)</option>
+            <option value="4" selected>Important (4 pts)</option>
+            <option value="6">Notable (6 pts)</option>
+            <option value="8">Redoutable (8 pts)</option>
+            <option value="10">Légendaire (10+ pts)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Description rapide</label>
+        <input type="text" id="pnj-desc" placeholder="Hautain et antipathique, marchand rusé, ami discret…">
+      </div>
+      <div class="field-row" id="pnj-stats-row">
+        <div class="field"><label>Social</label><input type="number" id="pnj-soc" value="1" min="0" max="10" style="width:70px;background:var(--bg-mid);border:1px solid var(--border);border-radius:4px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;padding:6px;text-align:center"></div>
+        <div class="field"><label>Physique</label><input type="number" id="pnj-phy" value="1" min="0" max="10" style="width:70px;background:var(--bg-mid);border:1px solid var(--border);border-radius:4px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;padding:6px;text-align:center"></div>
+        <div class="field"><label>Émotionnel</label><input type="number" id="pnj-emo" value="1" min="0" max="10" style="width:70px;background:var(--bg-mid);border:1px solid var(--border);border-radius:4px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;padding:6px;text-align:center"></div>
+        <div class="field"><label>Magie</label><input type="number" id="pnj-mag" value="0" min="0" max="10" style="width:70px;background:var(--bg-mid);border:1px solid var(--border);border-radius:4px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;padding:6px;text-align:center"></div>
+      </div>
+      <div class="field">
+        <label>Type de Magie (si Magie ≥ 1)</label>
+        <input type="text" id="pnj-magie" placeholder="Thème magique…">
+      </div>
+      <button class="btn btn-primary" onclick="addPNJ()">+ Ajouter le PNJ</button>
+    </div>
+
+    <div id="pnj-list"></div>
+    <div id="pnj-empty" style="text-align:center;color:var(--muted);font-style:italic;padding:40px;display:none">Aucun PNJ pour l'instant.</div>
+
+  </section>
+
+</div><!-- #app -->
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  perso: {
+    nom:'', allure:'', passe:'', situation:'', objectif:'',
+    social:1, physique:1, emotionnel:1, magie:1,
+    magie1:'', magie1desc:'', magie2:'', magie3:'',
+    jetons: [],  // array of bool: true=available
+    frappes: 0,
+    notes: ''
+  },
+  journal: [],   // [{id, date, text}]
+  pnjs: [],      // [{id, nom, desc, cat, soc, phy, emo, mag, magie, frappes}]
+  combat: {
+    atkType: 'physique',
+    atkAvd: 0,
+    enemiFrappes: 0
+  }
+};
+
+/* ============================================================
+   ORACLE DATA
+   ============================================================ */
+// Each row: [label, array of 20 results indexed 1-20]
+// Results: 0=Non et en plus, 1=Non, 2=Non mais par contre, 3=Oui mais par contre, 4=Oui, 5=Oui et en plus
+const ORACLE = [
+  {label:'Très plausible',   thresholds:[0,0,1,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5]},
+  {label:'Plausible',        thresholds:[0,0,0,1,1,2,2,2,2,3,3,4,4,4,4,4,4,4,4,5]},
+  {label:'Neutre',           thresholds:[0,0,1,1,1,2,2,2,3,3,3,4,4,4,4,4,4,4,5,5]},
+  {label:'Peu plausible',    thresholds:[0,0,1,1,1,1,1,2,2,2,3,3,3,4,4,4,4,4,5,5]},
+  {label:'Très peu plausible',thresholds:[0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5]}
+];
+const ORACLE_LABELS = [
+  {key:'non-ep', text:'Non et en plus…',     cls:'r-non-ep'},
+  {key:'non',    text:'Non',                  cls:'r-non'},
+  {key:'non-m',  text:'Non mais par contre…', cls:'r-non-m'},
+  {key:'oui-m',  text:'Oui mais par contre…', cls:'r-oui-m'},
+  {key:'oui',    text:'Oui',                  cls:'r-oui'},
+  {key:'oui-ep', text:'Oui et en plus…',      cls:'r-oui-ep'}
+];
+
+/* Thresholds for the visual scale: where each zone starts (0-based, out of 20) */
+// Oracle row visual: for each row, define zone boundaries at positions (1-20 scale)
+const ORACLE_ZONES = [
+  // Très plausible: non-ep 1-2, non -, non-m 3, oui-m 4-10, oui 11-18, oui-ep 19-20
+  [[1,2],[],[3],[4,10],[11,18],[19,20]],
+  // Plausible:
+  [[1,3],[4,6],[7,9],[10,11],[12,18],[19,20]],
+  // Neutre:
+  [[1,2],[3,5],[6,9],[10,11],[12,18],[19,20]],
+  // Peu plausible:
+  [[1,2],[3,7],[8,10],[11,14],[15,18],[19,20]],
+  // Très peu plausible:
+  [[1,2],[3,7],[8,12],[13,16],[17,18],[19,20]],
+];
+
+/* ============================================================
+   MOTS-CLÉS
+   ============================================================ */
+const MOTS_CLES = [
+  // Row 0 (d10 dizaines = 0→1, 1→1 etc.) × col (unités 1-10)
+  // We use a flat 100-word list accessed by (d10_tens*10 + d10_units - 1) % 100
+  'Lumière','Ombre','Feu','Eau','Terre','Air','Métal','Bois','Pierre','Cristal',
+  'Rouge','Bleu','Or','Argent','Noir','Blanc','Vert','Violet','Gris','Brun',
+  'Doux','Dur','Chaud','Froid','Lent','Rapide','Haut','Bas','Large','Étroit',
+  'Cri','Silence','Murmure','Musique','Bruit','Odeur','Parfum','Fumée','Vent','Pluie',
+  'Clé','Porte','Fenêtre','Escalier','Pont','Mur','Tour','Caverne','Forêt','Mer',
+  'Peur','Espoir','Colère','Joie','Tristesse','Amour','Haine','Doute','Confiance','Solitude',
+  'Épée','Bouclier','Livre','Carte','Lettre','Anneau','Pièce','Fiole','Dague','Arc',
+  'Roi','Mage','Voleur','Garde','Marchand','Enfant','Vieillard','Messager','Ennemi','Allié',
+  'Secret','Mensonge','Vérité','Promesse','Serment','Trahison','Ruse','Piège','Danger','Chance',
+  'Aube','Crépuscule','Nuit','Tempête','Brume','Lune','Soleil','Étoile','Tonnerre','Éclair'
+];
+
+/* ============================================================
+   COMPETENCES CONFIG
+   ============================================================ */
+const COMPS = [
+  {key:'social',    label:'Social',     icon:'💬', color:'var(--social)',  desc:'Relations, influence, lecture des gens'},
+  {key:'physique',  label:'Physique',   icon:'⚡', color:'var(--physique)',desc:'Agilité, force, endurance, discrétion'},
+  {key:'emotionnel',label:'Émotionnel', icon:'❤', color:'var(--emo)',     desc:'Volonté, sang-froid, intuition'},
+  {key:'magie',     label:'Magie',      icon:'✨', color:'var(--magie)',   desc:'Percevoir, maintenir ou projeter des effets'},
+];
+const TOTAL_POINTS = 4;
+
+/* ============================================================
+   JET STATE
+   ============================================================ */
+let jetComp = 'social';
+let jetDiff = 10;
+let jetAvd  = 0;
+let oracleProb = 0;
+let atkAvd = 0;
+let atkType = 'physique';
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  loadFromStorage();
+  renderCompGrid();
+  renderJetCompBtns();
+  renderOracleScale();
+  renderFrappes('perso');
+  renderFrappes('enemi');
+  renderJetons();
+  renderJournal();
+  renderPNJList();
+  bindPersoInputs();
+  updateSaveStatus();
+  checkMagieBlocks();
+});
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+document.getElementById('main-nav').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+});
+
+/* ============================================================
+   COMPETENCES
+   ============================================================ */
+function renderCompGrid() {
+  const grid = document.getElementById('comp-grid');
+  grid.innerHTML = COMPS.map(c => `
+    <div class="comp-item" id="ci-${c.key}">
+      <div class="comp-icon">${c.icon}</div>
+      <div class="comp-name" style="color:${c.color}">${c.label}</div>
+      <div class="comp-controls">
+        <button class="comp-btn" onclick="changeComp('${c.key}',-1)">−</button>
+        <span class="comp-val" id="cv-${c.key}" style="color:${c.color}">${state.perso[c.key]}</span>
+        <button class="comp-btn" onclick="changeComp('${c.key}',1)">+</button>
+      </div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;font-style:italic">${c.desc}</div>
+    </div>
+  `).join('');
+  updatePointsLeft();
+}
+
+function changeComp(key, delta) {
+  const used = COMPS.reduce((s,c)=>s+state.perso[c.key],0);
+  if (delta>0 && used>=TOTAL_POINTS) { toast('Plus de points disponibles !'); return; }
+  if (delta<0 && state.perso[key]<=0) return;
+  state.perso[key] += delta;
+  document.getElementById('cv-'+key).textContent = state.perso[key];
+  updatePointsLeft();
+  renderJetons();
+  checkMagieBlocks();
+  renderJetCompBtns();
+  markUnsaved();
+}
+
+function updatePointsLeft() {
+  const used = COMPS.reduce((s,c)=>s+state.perso[c.key],0);
+  const left = TOTAL_POINTS - used;
+  document.getElementById('pts-left').textContent = left;
+  document.getElementById('points-left-msg').style.color = left>0 ? 'var(--amber)' : '#5ad000';
+}
+
+function checkMagieBlocks() {
+  document.getElementById('magie-card').style.display = state.perso.magie >= 1 ? '' : 'none';
+  document.getElementById('magie2-block').style.display = state.perso.magie >= 4 ? '' : 'none';
+  document.getElementById('magie3-block').style.display = state.perso.magie >= 7 ? '' : 'none';
+}
+
+/* ============================================================
+   JETONS MAGIE
+   ============================================================ */
+function renderJetons() {
+  const n = state.perso.magie;
+  // Resize array
+  while (state.perso.jetons.length < n) state.perso.jetons.push(true);
+  state.perso.jetons = state.perso.jetons.slice(0, n);
+
+  const row = document.getElementById('jetons-row');
+  if (n === 0) { row.innerHTML = '<span style="color:var(--muted);font-style:italic;font-size:0.9rem">Aucun jeton (Magie = 0)</span>'; return; }
+  row.innerHTML = state.perso.jetons.map((avail, i) => `
+    <div class="jeton ${avail?'':'used'}" title="Cliquer pour retourner" onclick="toggleJeton(${i})">
+      ${avail ? '✦' : '·'}
+    </div>
+  `).join('');
+}
+
+function toggleJeton(i) {
+  state.perso.jetons[i] = !state.perso.jetons[i];
+  renderJetons();
+  markUnsaved();
+}
+
+function restoreJetons() {
+  state.perso.jetons = state.perso.jetons.map(() => true);
+  renderJetons();
+  toast('Jetons récupérés après une nuit de sommeil ✦');
+  markUnsaved();
+}
+
+/* ============================================================
+   FRAPPES
+   ============================================================ */
+function renderFrappes(who) {
+  const n = who === 'perso' ? state.perso.frappes : state.combat.enemiFrappes;
+  const id = who === 'perso' ? 'frappes-perso' : 'frappes-enemi';
+  const statusId = who === 'perso' ? 'combat-status' : 'enemi-status';
+  const row = document.getElementById(id);
+  row.innerHTML = [0,1,2].map(i => {
+    const hit = i < n;
+    const ko  = n >= 3;
+    return `<div class="frappe-dot ${hit ? (ko ? 'ko' : 'hit') : 'empty'}" onclick="toggleFrappe('${who}',${i})">${hit ? (ko && i===2 ? '☠' : '✖') : '○'}</div>`;
+  }).join('');
+  const status = document.getElementById(statusId);
+  if (n === 0) status.textContent = 'En forme';
+  else if (n === 1) status.textContent = '1 frappe reçue — blessé';
+  else if (n === 2) status.textContent = '2 frappes — sérieusement blessé !';
+  else status.innerHTML = '<span style="color:var(--c-red)">☠ KO / État comateux / Mort</span>';
+}
+
+function toggleFrappe(who, i) {
+  if (who === 'perso') {
+    state.perso.frappes = state.perso.frappes === i+1 ? i : i+1;
+    renderFrappes('perso');
+  } else {
+    state.combat.enemiFrappes = state.combat.enemiFrappes === i+1 ? i : i+1;
+    renderFrappes('enemi');
+  }
+  markUnsaved();
+}
+
+function resetFrappes(who) {
+  if (who === 'perso') state.perso.frappes = 0;
+  else state.combat.enemiFrappes = 0;
+  renderFrappes(who);
+  markUnsaved();
+}
+
+/* ============================================================
+   JET DE COMPÉTENCE
+   ============================================================ */
+function renderJetCompBtns() {
+  const div = document.getElementById('jet-comp-btns');
+  div.innerHTML = COMPS.map(c => `
+    <button class="select-btn ${jetComp===c.key?'chosen':''}" onclick="setJetComp('${c.key}')">
+      ${c.icon} ${c.label} <strong>(${state.perso[c.key]})</strong>
+    </button>
+  `).join('');
+}
+
+function setJetComp(k) { jetComp = k; renderJetCompBtns(); }
+function setDiff(btn, v) {
+  document.querySelectorAll('#jet-diff-btns .select-btn').forEach(b=>b.classList.remove('chosen'));
+  btn.classList.add('chosen'); jetDiff = v;
+}
+function setAvd(btn, v) {
+  document.querySelectorAll('#jet-avd-btns .select-btn').forEach(b=>b.classList.remove('chosen'));
+  btn.classList.add('chosen'); jetAvd = v;
+}
+
+function rollJet() {
+  const comp = state.perso[jetComp];
+  let rolls = [roll(20)];
+  if (jetAvd !== 0) rolls.push(roll(20));
+  const raw = jetAvd === 1 ? Math.max(...rolls) : (jetAvd === -1 ? Math.min(...rolls) : rolls[0]);
+  const total = raw + comp;
+  const success = total >= jetDiff;
+
+  const el = document.getElementById('jet-dice');
+  const area = document.getElementById('jet-result-area');
+  area.style.display = '';
+  el.textContent = raw;
+  el.className = 'dice-big rolling';
+  setTimeout(()=>el.classList.remove('rolling'),450);
+  el.style.color = success ? '#5ad000' : 'var(--c-red)';
+
+  const compName = COMPS.find(c=>c.key===jetComp).label;
+  let detail = `d20(${raw}) + ${compName}(${comp}) = ${total} vs ${jetDiff}`;
+  if (rolls.length>1) detail = `d20 [${rolls.join(', ')}] → ${raw} ${jetAvd===1?'(meilleur)':'(moins bon)'} + ${compName}(${comp}) = ${total} vs ${jetDiff}`;
+  document.getElementById('jet-detail').textContent = detail;
+  document.getElementById('jet-detail').className = 'dice-result-text ' + (success ? 'result-success' : 'result-fail');
+
+  const verd = document.getElementById('jet-verdict');
+  verd.textContent = success ? '✦ RÉUSSITE' : '✖ ÉCHEC — raconte les conséquences…';
+  verd.style.color = success ? '#5ad000' : 'var(--c-red)';
+}
+
+/* ============================================================
+   ORACLE SCALE VISUAL
+   ============================================================ */
+function renderOracleScale() {
+  const wrap = document.getElementById('oracle-scale-visual');
+  wrap.innerHTML = ORACLE.map((row, ri) => `
+    <div class="oracle-row">
+      <div class="oracle-row-label">${row.label}</div>
+      <div style="position:relative">
+        <div class="oracle-bar-track" id="obar-${ri}">
+          <div class="oracle-tick-overlay">
+            ${Array.from({length:20},(_,i)=>`<div class="oracle-tick"><div class="oracle-tick-num">${i+1}</div></div>`).join('')}
+          </div>
+          <div class="oracle-pointer" id="optr-${ri}" style="left:0%;display:none"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setProb(btn, v) {
+  document.querySelectorAll('#oracle-prob-btns .select-btn').forEach(b=>b.classList.remove('chosen'));
+  btn.classList.add('chosen');
+  oracleProb = v;
+}
+
+function rollOracle() {
+  const d = roll(20);
+  const row = ORACLE[oracleProb];
+  const resultIdx = row.thresholds[d-1]; // 0-5
+  const res = ORACLE_LABELS[resultIdx];
+
+  // Update pointer
+  for (let i=0;i<5;i++) {
+    const ptr = document.getElementById('optr-'+i);
+    ptr.style.display = i===oracleProb ? '' : 'none';
+    if (i===oracleProb) ptr.style.left = ((d-1)/19*100)+'%';
+  }
+
+  const el = document.getElementById('oracle-dice');
+  const area = document.getElementById('oracle-result-area');
+  area.style.display = '';
+  el.textContent = d;
+  el.className = 'dice-big rolling';
+  el.style.color = resultIdx >= 3 ? '#5ad000' : (resultIdx <= 1 ? 'var(--c-red)' : 'var(--c-yellow)');
+  setTimeout(()=>el.classList.remove('rolling'),450);
+
+  document.getElementById('oracle-detail').textContent = `Dé: ${d} · Ligne: ${ORACLE[oracleProb].label}`;
+  document.getElementById('oracle-detail').className = 'dice-result-text result-neutral';
+
+  const verd = document.getElementById('oracle-verdict');
+  verd.innerHTML = `<span class="${res.cls}">${res.text}</span>`;
+}
+
+/* ============================================================
+   MOTS-CLÉS
+   ============================================================ */
+function rollMotsCles() {
+  const d1 = roll(10); // dizaines
+  const d2 = roll(10); // unités
+  const i1 = (d1-1)*10 + (d2-1);
+  // second roll
+  let d3, d4, i2;
+  do {
+    d3 = roll(10); d4 = roll(10);
+    i2 = (d3-1)*10 + (d4-1);
+  } while (i2 === i1);
+
+  const w1 = MOTS_CLES[i1 % MOTS_CLES.length];
+  const w2 = MOTS_CLES[i2 % MOTS_CLES.length];
+
+  document.getElementById('mc-word1').textContent = w1;
+  document.getElementById('mc-word2').textContent = w2;
+  document.getElementById('mc-result').style.display = 'flex';
+  document.getElementById('mc-inspire').textContent = `Association libre : que t'évoquent "${w1}" et "${w2}" ensemble dans ta scène ?`;
+}
+
+/* ============================================================
+   COMBAT — ATTAQUE
+   ============================================================ */
+function setAtkType(t) {
+  atkType = t;
+  document.getElementById('atk-phys').classList.toggle('chosen', t==='physique');
+  document.getElementById('atk-magi').classList.toggle('chosen', t==='magie');
+}
+function setAtkAvd(btn, v) {
+  document.querySelectorAll('#atk-avd-btns .select-btn').forEach(b=>b.classList.remove('chosen'));
+  btn.classList.add('chosen'); atkAvd = v;
+}
+
+function rollAttaque() {
+  const myComp = atkType==='physique' ? state.perso.physique : state.perso.magie;
+  const enemiComp = parseInt(document.getElementById('enemi-stat').value)||0;
+  const diff = 10 + enemiComp;
+
+  if (atkType==='magie') {
+    const avail = state.perso.jetons.filter(j=>j).length;
+    if (avail===0) { toast('Plus de jetons de magie ! Dors une nuit pour récupérer.'); return; }
+    // Consume one jeton
+    const idx = state.perso.jetons.findIndex(j=>j);
+    state.perso.jetons[idx] = false;
+    renderJetons();
+  }
+
+  let rolls = [roll(20)];
+  if (atkAvd !== 0) rolls.push(roll(20));
+  const raw = atkAvd === 1 ? Math.max(...rolls) : (atkAvd === -1 ? Math.min(...rolls) : rolls[0]);
+  const total = raw + myComp;
+  const hit = total >= diff;
+
+  const el = document.getElementById('atk-dice');
+  const area = document.getElementById('atk-result-area');
+  area.style.display = '';
+  el.textContent = raw;
+  el.className = 'dice-big rolling';
+  el.style.color = hit ? '#5ad000' : 'var(--c-red)';
+  setTimeout(()=>el.classList.remove('rolling'),450);
+
+  const typeName = atkType==='physique' ? 'Physique' : 'Magie';
+  let det = `d20(${raw}) + ${typeName}(${myComp}) = ${total} vs ${diff} (10 + Ennemi ${enemiComp})`;
+  if (rolls.length>1) det = `d20 [${rolls.join(', ')}] → ${raw} + ${typeName}(${myComp}) = ${total} vs ${diff}`;
+  document.getElementById('atk-detail').textContent = det;
+  document.getElementById('atk-detail').className = 'dice-result-text ' + (hit?'result-success':'result-fail');
+
+  const verd = document.getElementById('atk-verdict');
+  if (hit) {
+    verd.innerHTML = '<span style="color:#5ad000">✦ TOUCHÉ ! — 1 frappe infligée</span>';
+    toast('Touché ! Continue si tu veux enchaîner.');
+  } else {
+    verd.innerHTML = '<span style="color:var(--c-red)">✖ Raté — l\'ennemi prend la main</span>';
+  }
+  markUnsaved();
+}
+
+/* ============================================================
+   JOURNAL
+   ============================================================ */
+function addJournalEntry() {
+  const txt = document.getElementById('journal-input').value.trim();
+  if (!txt) return;
+  state.journal.unshift({ id: Date.now(), date: nowStr(), text: txt });
+  document.getElementById('journal-input').value = '';
+  renderJournal();
+  markUnsaved();
+}
+
+function deleteJournalEntry(id) {
+  state.journal = state.journal.filter(e=>e.id!==id);
+  renderJournal();
+  markUnsaved();
+}
+
+function renderJournal() {
+  const list = document.getElementById('journal-list');
+  const empty = document.getElementById('journal-empty');
+  if (state.journal.length === 0) { list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  list.innerHTML = state.journal.map(e => `
+    <div class="journal-entry">
+      <div class="entry-meta">${e.date}</div>
+      <div class="entry-text">${escHtml(e.text)}</div>
+      <button class="entry-del" onclick="deleteJournalEntry(${e.id})" title="Supprimer">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   PNJ
+   ============================================================ */
+function addPNJ() {
+  const nom = document.getElementById('pnj-nom').value.trim();
+  if (!nom) { toast('Donne un nom au PNJ !'); return; }
+  state.pnjs.push({
+    id: Date.now(),
+    nom,
+    desc: document.getElementById('pnj-desc').value.trim(),
+    cat: document.getElementById('pnj-cat').value,
+    soc: +document.getElementById('pnj-soc').value,
+    phy: +document.getElementById('pnj-phy').value,
+    emo: +document.getElementById('pnj-emo').value,
+    mag: +document.getElementById('pnj-mag').value,
+    magie: document.getElementById('pnj-magie').value.trim(),
+    frappes: 0
+  });
+  renderPNJList();
+  document.getElementById('pnj-nom').value='';
+  document.getElementById('pnj-desc').value='';
+  document.getElementById('pnj-magie').value='';
+  markUnsaved();
+}
+
+function deletePNJ(id) {
+  state.pnjs = state.pnjs.filter(p=>p.id!==id);
+  renderPNJList(); markUnsaved();
+}
+
+function togglePNJFrappe(id, i) {
+  const p = state.pnjs.find(p=>p.id===id);
+  if (!p) return;
+  p.frappes = p.frappes === i+1 ? i : i+1;
+  renderPNJList(); markUnsaved();
+}
+
+function renderPNJList() {
+  const list = document.getElementById('pnj-list');
+  const empty = document.getElementById('pnj-empty');
+  if (state.pnjs.length===0) { list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  list.innerHTML = state.pnjs.map(p => {
+    const fDots = [0,1,2].map(i => {
+      const hit = i < p.frappes;
+      const ko = p.frappes >= 3;
+      return `<div class="frappe-dot ${hit?(ko?'ko':'hit'):'empty'}" style="width:28px;height:28px;font-size:0.9rem" onclick="togglePNJFrappe(${p.id},${i})">${hit?(ko&&i===2?'☠':'✖'):'○'}</div>`;
+    }).join('');
+    return `
+    <div class="pnj-card">
+      <div class="pnj-info">
+        <div class="pnj-name">${escHtml(p.nom)}</div>
+        <div class="pnj-desc">${escHtml(p.desc)}</div>
+        <div class="pnj-stats">
+          <span class="pnj-stat" style="color:var(--social)">💬 ${p.soc}</span>
+          <span class="pnj-stat" style="color:var(--physique)">⚡ ${p.phy}</span>
+          <span class="pnj-stat" style="color:var(--emo)">❤ ${p.emo}</span>
+          <span class="pnj-stat" style="color:var(--magie)">✨ ${p.mag}</span>
+          ${p.magie ? `<span class="pnj-stat" style="color:var(--magie)">${p.magie}</span>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          ${fDots}
+          <span style="font-size:0.75rem;color:var(--muted);margin-left:4px">${p.frappes>=3?'KO':p.frappes+'/3'}</span>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="deletePNJ(${p.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   BIND PERSO INPUTS
+   ============================================================ */
+function bindPersoInputs() {
+  const fields = ['nom','allure','passe','situation','objectif','magie1','magie1desc','magie2','magie3','notes'];
+  fields.forEach(f => {
+    const el = document.getElementById('p-'+f);
+    if (!el) return;
+    el.value = state.perso[f] || '';
+    el.addEventListener('input', () => { state.perso[f] = el.value; markUnsaved(); });
+  });
+}
+
+/* ============================================================
+   SAVE / LOAD / EXPORT
+   ============================================================ */
+const STORAGE_KEY = 'saga_jdr_v1';
+
+function saveAll() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSaveStatus('saved', '✦ Sauvegardé — ' + nowStr());
+    toast('Sauvegarde réussie ✦');
+  } catch(e) { toast('Erreur de sauvegarde : ' + e.message); }
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(state.perso, saved.perso || {});
+    state.journal = saved.journal || [];
+    state.pnjs = saved.pnjs || [];
+    Object.assign(state.combat, saved.combat || {});
+    setSaveStatus('saved', '✦ Chargé depuis la sauvegarde');
+  } catch(e) { console.warn('Load error', e); }
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'saga_' + (state.perso.nom || 'perso') + '_' + Date.now() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Fichier exporté ⬇');
+}
+
+function importJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      Object.assign(state.perso, data.perso || {});
+      state.journal = data.journal || [];
+      state.pnjs = data.pnjs || [];
+      Object.assign(state.combat, data.combat || {});
+      // Re-render everything
+      bindPersoInputs();
+      renderCompGrid();
+      renderJetCompBtns();
+      renderJetons();
+      renderFrappes('perso');
+      renderFrappes('enemi');
+      renderJournal();
+      renderPNJList();
+      checkMagieBlocks();
+      setSaveStatus('saved', '✦ Importé depuis JSON');
+      toast('Import réussi ✦');
+    } catch(e) { toast('Erreur d\'import : fichier invalide'); }
+  };
+  reader.readAsText(file);
+}
+
+function confirmReset() {
+  if (!confirm('Réinitialiser entièrement la fiche ? Cette action est irréversible.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+let _unsavedTimer;
+function markUnsaved() {
+  setSaveStatus('unsaved', '● Non sauvegardé');
+  clearTimeout(_unsavedTimer);
+  _unsavedTimer = setTimeout(saveAll, 3000); // auto-save after 3s idle
+}
+
+function updateSaveStatus() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) setSaveStatus('', 'Aucune sauvegarde locale');
+}
+
+function setSaveStatus(cls, msg) {
+  const el = document.getElementById('save-status');
+  el.className = 'save-status ' + cls;
+  el.textContent = msg;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function roll(n) { return Math.floor(Math.random()*n) + 1; }
+
+function nowStr() {
+  const d = new Date();
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+let _toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// Auto-save on page unload
+window.addEventListener('beforeunload', () => { saveAll(); });
+</script>
+</body>
+</html>
